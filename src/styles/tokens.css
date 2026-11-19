@@ -1,0 +1,75 @@
+/* Sixpence brand tokens. Source of truth: project branding/tokens.css. Fonts load via next/font in layout.tsx. */
+
+:root {
+  --brand-name: "Sixpence";
+
+  /* Color */
+  --color-ink: #1E2430;
+  --color-linen: #FAF6EF;
+  --color-card: #FFFFFF;
+  --color-line: #E6DFD3;
+  --color-pewter: #6B7079;
+  --color-blue: #3550C4;
+  --color-blue-soft: #DCE3FA;
+  --color-brass: #C8902E;
+  --color-brass-deep: #8A5F12;
+  --color-sage: #4F7A5C;
+  --color-sage-soft: #E2EDE4;
+  --color-blush: #F3D9CF;
+  --color-clay: #B5523B;
+
+  /* Semantic */
+  --bg: var(--color-linen);
+  --surface: var(--color-card);
+  --border: var(--color-line);
+  --text: var(--color-ink);
+  --text-muted: var(--color-pewter);
+  --primary: var(--color-blue);
+  --on-primary: #FFFFFF;
+  --primary-soft: var(--color-blue-soft);
+  --accent: var(--color-brass);
+  --accent-text: var(--color-brass-deep);
+  --success: var(--color-sage);
+  --success-soft: var(--color-sage-soft);
+  --over-plan: var(--color-brass);      /* never red for money */
+  --danger: var(--color-clay);          /* destructive actions and real errors only */
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--color-blue) 35%, transparent);
+
+  /* Type */
+  --font-display: "Fraunces", Georgia, serif;
+  --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --fs-xs: 0.75rem; --fs-sm: 0.875rem; --fs-md: 1rem; --fs-lg: 1.125rem; --fs-xl: 1.25rem;
+  --fs-2xl: 1.5rem; --fs-3xl: 2rem; --fs-4xl: 2.5rem; --fs-5xl: 3.25rem;
+  --lh-tight: 1.15; --lh-body: 1.5;
+
+  /* Shape & space */
+  --radius-sm: 10px; --radius-md: 16px; --radius-pill: 999px;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px; --space-8: 32px; --space-12: 48px;
+  --shadow-float: 0 8px 24px rgba(30, 36, 48, 0.10);
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --dur-fast: 150ms; --dur: 250ms;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14181F; --surface: #1C212B; --border: #2C3240;
+    --text: #EEE9E0; --text-muted: #9AA0AA;
+    --primary: #93A6F2; --on-primary: #14181F; --primary-soft: #26304F;
+    --accent: #E2B25A; --accent-text: #E2B25A;
+    --success: #8DBB99; --success-soft: #1F2E25;
+    --over-plan: #E2B25A; --danger: #E58C74;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14181F; --surface: #1C212B; --border: #2C3240;
+  --text: #EEE9E0; --text-muted: #9AA0AA;
+  --primary: #93A6F2; --on-primary: #14181F; --primary-soft: #26304F;
+  --accent: #E2B25A; --accent-text: #E2B25A;
+  --success: #8DBB99; --success-soft: #1F2E25;
+  --over-plan: #E2B25A; --danger: #E58C74;
+}
+
+.money, td.amount { font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
