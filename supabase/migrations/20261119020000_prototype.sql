@@ -262,6 +262,8 @@ create policy "planners read guests" on public.guest for select using (public.is
 create policy "editors write guests" on public.guest for all using (public.can_edit(wedding_id)) with check (public.can_edit(wedding_id));
 create policy "planners read timeline" on public.timeline_event for select using (public.is_planner(wedding_id));
 create policy "editors write timeline" on public.timeline_event for all using (public.can_edit(wedding_id)) with check (public.can_edit(wedding_id));
+-- The fictional sample wedding shows its activity feed to visitors.
+create policy "anyone reads sample activity" on public.activity for select using (public.is_sample(wedding_id));
 create policy "planners read boards" on public.board_item for select using (public.is_planner(wedding_id));
 create policy "editors write boards" on public.board_item for all using (public.can_edit(wedding_id)) with check (public.can_edit(wedding_id));
 create policy "owners manage invites" on public.invite for all

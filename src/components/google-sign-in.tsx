@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { DevSignIn } from "@/components/dev-sign-in";
 import { createClient } from "@/lib/supabase/client";
 
 export function GoogleSignIn({ disabled, next, label }: { disabled?: boolean; next?: string; label?: string }) {
@@ -18,6 +19,7 @@ export function GoogleSignIn({ disabled, next, label }: { disabled?: boolean; ne
   }
 
   return (
+    <div className="flex flex-col items-center">
     <button
       type="button"
       onClick={signIn}
@@ -26,5 +28,7 @@ export function GoogleSignIn({ disabled, next, label }: { disabled?: boolean; ne
     >
       {busy ? "Opening Google…" : (label ?? "Continue with Google")}
     </button>
+      <DevSignIn next={next} />
+    </div>
   );
 }

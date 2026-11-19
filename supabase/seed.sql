@@ -226,3 +226,21 @@ insert into public.timeline_event (wedding_id, starts_at, ends_at, title, locati
   ('00000000-0000-4000-8000-000000000001', '18:00', '20:00', 'Dinner and toasts', 'The barn', 'Blue Ridge Table', '00000000-0000-4000-8000-000000000103', 6),
   ('00000000-0000-4000-8000-000000000001', '20:00', '22:30', 'Dancing', 'The barn', 'Night Owl Sound', '00000000-0000-4000-8000-000000000105', 7),
   ('00000000-0000-4000-8000-000000000001', '22:30', null, 'Sparkler send-off', 'Front lawn', null, null, 8);
+
+-- Activity feed and boards for the sample (fictional). "who" stands in for member names, since the sample has no members.
+insert into public.activity (wedding_id, actor_type, action, entity_type, entity_id, diff, created_at) values
+  ('00000000-0000-4000-8000-000000000001', 'user', 'plan.saved', 'wedding', '00000000-0000-4000-8000-000000000001', '{"who":"Jordan"}', now() - interval '120 days'),
+  ('00000000-0000-4000-8000-000000000001', 'user', 'vendor.booked', 'vendor', '00000000-0000-4000-8000-000000000101', '{"who":"Sam","name":"Laurel Ridge Farm"}', now() - interval '60 days'),
+  ('00000000-0000-4000-8000-000000000001', 'user', 'vendor.booked', 'vendor', '00000000-0000-4000-8000-000000000102', '{"who":"Jordan","name":"Juniper & Pine Photo"}', now() - interval '41 days'),
+  ('00000000-0000-4000-8000-000000000001', 'user', 'vendor.booked', 'vendor', '00000000-0000-4000-8000-000000000103', '{"who":"Sam","name":"Blue Ridge Table"}', now() - interval '30 days'),
+  ('00000000-0000-4000-8000-000000000001', 'user', 'contribution.added', 'wedding', '00000000-0000-4000-8000-000000000001', '{"who":"Jordan","from":"Jordan''s parents"}', now() - interval '25 days'),
+  ('00000000-0000-4000-8000-000000000001', 'user', 'quote.added', 'vendor', '00000000-0000-4000-8000-000000000107', '{"who":"Sam","total":650}', now() - interval '6 days'),
+  ('00000000-0000-4000-8000-000000000001', 'user', 'quote.added', 'vendor', '00000000-0000-4000-8000-000000000108', '{"who":"Jordan","total":715}', now() - interval '4 days'),
+  ('00000000-0000-4000-8000-000000000001', 'guest', 'rsvp.received', 'household', '00000000-0000-4000-8000-000000001026', null, now() - interval '2 days'),
+  ('00000000-0000-4000-8000-000000000001', 'user', 'payment.paid', 'wedding', '00000000-0000-4000-8000-000000000001', '{"who":"Sam","amount":1000}', now() - interval '1 day');
+
+insert into public.board_item (wedding_id, kind, title, category_key, note) values
+  ('00000000-0000-4000-8000-000000000001', 'note', 'Colors we keep coming back to', 'flowers', 'Sage, cream and a little rust. Nothing too shiny.'),
+  ('00000000-0000-4000-8000-000000000001', 'note', 'Pie table instead of a tall cake', 'cake', 'Small cutting cake plus pies from a local bakery. Ask both bakers.'),
+  ('00000000-0000-4000-8000-000000000001', 'note', 'Shuttle for the mountain road', 'transport', 'One run at 4pm, two runs back at 10:30 and 11.'),
+  ('00000000-0000-4000-8000-000000000001', 'note', 'Songs for the first dance', 'music', 'Shortlist three and pick after the tasting.');

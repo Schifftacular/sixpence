@@ -92,7 +92,7 @@ async function Vendor({ params }: { params: Promise<{ weddingId: string; vendorI
             readOnly={ctx.readOnly}
           />
           {v.status !== "booked" && canMoney && (
-            <div><BookVendor vendorId={v.id} vendorName={v.name} guests={guests} planned={planned}
+            <div><BookVendor key={qs.map((q) => q.id).join(",")} vendorId={v.id} vendorName={v.name} guests={guests} planned={planned}
               quotes={qs.map((q) => ({ id: q.id, cost: q.cost, label: `${formatMoney(q.cost)}${q.pricing_basis === "per_guest" ? ` (${formatMoney(Number(q.per_guest_amount))} per guest)` : ""}${q.expires_on ? `, good until ${shortDate(q.expires_on)}` : ""}` }))} /></div>
           )}
         </section>

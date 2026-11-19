@@ -44,7 +44,7 @@ async function Shell({ params, children }: { params: Promise<{ weddingId: string
         weddingName={ctx.wedding.name}
         stillFlexible={flex}
         budgetHref={`${base}/budget`}
-        addHref={ctx.readOnly ? null : `${base}/plan?add=task`}
+        addHref={ctx.readOnly ? null : `${base}/add`}
         partnerDot={ctx.partnerDot}
       />
       <main className="flex min-w-0 flex-1 flex-col px-4 pb-16 pt-20 sm:px-6 lg:px-10">

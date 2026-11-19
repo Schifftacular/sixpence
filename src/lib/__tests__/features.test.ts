@@ -145,3 +145,16 @@ describe("guest quick add", () => {
     expect(csv.split("\n")[1].startsWith('"Lee, Sam",Sam,Lee')).toBe(true);
   });
 });
+
+import { toResults } from "@/lib/geo";
+import { reflowDue } from "@/lib/plan/reflow";
+describe("settings helpers", () => {
+  it("labels US places with state codes", () => {
+    expect(toResults({ results: [{ name: "Asheville", latitude: 35.60095, longitude: -82.55402, admin1: "North Carolina", country_code: "US" }] }))
+      .toEqual([{ label: "Asheville, NC", lat: 35.601, lng: -82.554 }]);
+  });
+  it("re-flows due dates from the new wedding date, never into the past", () => {
+    expect(reflowDue("2027-06-01", -30, "2026-11-19")).toBe("2027-05-02");
+    expect(reflowDue("2026-12-01", -60, "2026-11-19")).toBe("2026-11-19");
+  });
+});
