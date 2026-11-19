@@ -60,6 +60,12 @@ describe("menuFor", () => {
     expect(m.map((i) => i.key)).not.toContain("guests");
     expect(m.map((i) => i.key)).toContain("contribution");
   });
+  it("gives planners six pillars with Explore second", () => {
+    const m = menuFor({ weddingId: "w", role: "owner", weddingDate: "2027-09-18", today: "2026-11-19" });
+    const pillars = m.filter((i) => i.group === "pillar").map((i) => i.key);
+    expect(pillars).toEqual(["week", "explore", "budget", "guests", "vendors", "plan"]);
+    expect(m.find((i) => i.key === "vendors")?.label).toBe("Your vendors");
+  });
   it("shows The Day only in the final three months", () => {
     const far = menuFor({ weddingId: "w", role: "owner", weddingDate: "2027-09-18", today: "2026-11-19" });
     const near = menuFor({ weddingId: "w", role: "owner", weddingDate: "2027-01-20", today: "2026-11-19" });

@@ -1,6 +1,6 @@
 # Free Wedding Planner: Prototype Architecture
 
-*Version 1.8, November 19, 2026. Owner: architecture thread. Built with the engineering:system-design and engineering:architecture frameworks.*
+*Version 1.9, November 19, 2026. Owner: architecture thread. Built with the engineering:system-design and engineering:architecture frameworks.*
 *Inputs: [market study](../market-research/wedding-saas-market-study.md), [feature list](../market-research/feature-list.md). v1.1 folds in [user flows v1](../user-flows/couple-user-flows.md) section 11; v1.2 folds in [free data sources](../data-sources/free-data-sources.md). v1.4 folds in the reworked onboarding (user flows F1: document extraction, sample wedding, resume, notifications) and the [brand guide](../branding/brand-guide.md) (name **Sixpence**, tokens in `branding/tokens.json`).*
 
 ---
@@ -375,20 +375,22 @@ Mike's own wedding is the prototype's first and main dataset: user research and 
 
 **Decision.** Option A, with deterministic parsing for spreadsheets and Word files so the model only sees what needs it. *Amended v1.5:* during development the model runs as **Claude Code under Mike's subscription on his own computer** (engine A in section 5a), because subscription credentials can't be used inside the app; the in-app Claude API worker (engine B) is built later, when other couples need it, and Option B (local OCR + rules) becomes engine C, the no-AI fallback. **Consequences:** the free app gets a small per-couple cost and a dependency on one provider, isolated behind `src/lib/extract/` so it can be swapped. **Revisit** the model choice after measuring accuracy and cost on the synthetic twin's documents.
 
-## 7a. Navigation and routes (v1.7)
+## 7a. Navigation and routes (v1.9)
 
-> **Under revision (Nov 19).** Mike wants discovery (finding vendors, getting ideas) to be a main function, not only managing decisions already made. The user flows thread is reworking the pillars and menu. The Milestone 1 shell keeps every menu item in one function (`src/lib/nav.ts` `menuFor`), so the new menu is a small change there. Discovery leans on the data helpers in section 5 (places, map) and moves up the build plan once the new flows land.
+> **Revised Nov 19 for discovery** ([discovery-proposal.md](../user-flows/discovery-proposal.md), approved by Mike): six pillars with **Explore** second; Vendors renamed **Your vendors**; **Boards** added below the divider. Venues live inside Explore. Discovery rules: no paid ranking, no sponsored results, no lead forms; saving never contacts anyone; every vendor shows budget fit once a price is known.
 
-From the approved navigation ([couple-user-flows.md](../user-flows/couple-user-flows.md) section 5, [navigation-council.md](../user-flows/navigation-council.md)): no bottom tab bar; a menu button opens five pillars with live status lines; a left rail on desktop.
+From the approved navigation ([couple-user-flows.md](../user-flows/couple-user-flows.md) section 5, [navigation-council.md](../user-flows/navigation-council.md)): no bottom tab bar; a menu button opens six pillars (five before the discovery revision) with live status lines; a left rail on desktop.
 
 | Menu item | Route | Status line comes from | Funder sees it? |
 |---|---|---|---|
 | This week (home) | `/w/[id]` | tasks due, payments due, new RSVPs (next 7 days) | Yes, money items only |
+| Explore | `/w/[id]/explore` (Venues, Vendors near you, What things cost, Ideas, Guides) | places index (section 5), local cost ranges | No |
 | Budget | `/w/[id]/budget` | `money.ts` → "Still flexible $X" | Yes |
 | Guests | `/w/[id]/guests` | RSVP counts | **No** (no guest data, enforced by RLS too) |
-| Vendors | `/w/[id]/vendors` | booked / open categories | No (sees vendor names and payments inside Budget) |
+| Your vendors | `/w/[id]/vendors` | considering / booked; empty categories link to Explore | No (sees vendor names and payments inside Budget) |
 | Plan (incl. The Day) | `/w/[id]/plan`, `/w/[id]/plan/day` | next tasks; The Day becomes its own menu item in the last 3 months | No |
 | — divider — | | | |
+| Boards | `/w/[id]/boards` | saved ideas and vendors | No |
 | Wedding book | `/w/[id]/book` | documents, items waiting for review | No |
 | Together | `/w/[id]/together` | partner, funders, roles, activity | Shown as **My contribution** (own entry only) |
 | Settings | `/w/[id]/settings` | notifications, export and delete | Yes (own notifications) |
@@ -442,6 +444,7 @@ Each milestone ends with something Mike can click on a live URL.
 | 0 | **Skeleton** | Repo, Next.js + Tailwind + shadcn, Supabase project (PostGIS on), deployed to Vercel, Sixpence tokens from `branding/tokens.json` mapped to Tailwind + logo/manifest from `branding/logo/web/`, synthetic twin + sample wedding seeds, product_event logging. Seed a small static cost table so onboarding works before the ETL exists | 1 |
 | 1 | **Onboarding + plan (F1, part 1)** | Landing + read-only sample wedding, 3-question start with no account, `generatePlan`, sign-in (Google only), `onboarding_state` resume, setup checklist, notification preferences | 3, 4, 5 |
 | 1b | **Bring in your wedding book (F1, part 2)** | Uploads, camera scan, paste; spreadsheet import with column mapping; per-type schemas; local Agent SDK worker `worker:local` (engine A); matcher; review queue with confidence and source; "Here's where you stand" summary; extraction eval on synthetic twin docs. In-app Claude API worker (engine B) deferred | 9, 10, 26 |
+| E | **Explore, part 1 (discovery P0)** | Places ETL for the launch metro pulled forward from Milestone 7 (Overture + Foursquare OS, wedding-category filter); Explore with Venues, Vendors near you (list + map) and What things cost; budget fit; save to Your vendors; discovery links in Budget, Plan and empty categories; onboarding style pick. Part 2 (P1): Ideas and Boards (Unsplash/Pexels), Guides, similar vendors. Vendor-claimed profiles are P2 | discovery proposal |
 | 2 | **Sharing (F9)** | Invite partner, funder, helper; roles and RLS policies | 1, 2 |
 | 3 | **Budget pillar (F3)** | Budget categories with cost ranges, `money.ts` four numbers, contributions | 11 |
 | 4 | **Vendors, quotes, payments (F5, F6)** | Vendor tracker with statuses, several quotes per vendor, accept → booked, payment schedule and due dates, document upload | 9, 10, 27 |
@@ -468,6 +471,7 @@ Order follows the user flows thread's section 12 (money first, because it is the
 10. **Domain.** Forward-to-email and branded email sending need the Sixpence domain (on Cloudflare for Email Routing).
 
 ## Changelog
+- 2026-11-19: v1.9, discovery (Mike approved): six pillars with Explore, Your vendors, Boards; new milestone E (Explore P0) right after 1b, pulling the places ETL forward from Milestone 7.
 - 2026-11-19: v1.8, Milestone 1 build notes: funder menu is This week, Budget, My contribution, Settings, Help (no Vendors); sign-in Google only in the build plan; API key only for engine B; `log_activity` RPC (activity rows from server actions, editors only); 7a marked under revision for discovery.
 - 2026-11-19: v1.7, approved navigation: section 7a route map, funder menu, shared shell with Still flexible line and + button, partner-activity dot via wedding_member.last_seen_activity_at; Money renamed Budget.
 - 2026-11-19: v1.6, engine A reworked per Mike: local Agent SDK worker on his computer, signed in with his subscription, pulling his wedding's queued jobs from the app (no interactive skill, no manual upload).

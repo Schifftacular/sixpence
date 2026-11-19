@@ -68,7 +68,7 @@ async function ThisWeek({ params }: { params: Promise<{ weddingId: string }> }) 
       label: "Guests",
       value: ctx.wedding.guest_estimate ? `About ${ctx.wedding.guest_estimate} guests` : "No guest count yet",
     },
-    isPlanner && { href: `${base}/vendors`, label: "Vendors", value: "None booked yet" },
+    isPlanner && { href: `${base}/vendors`, label: "Your vendors", value: "None booked yet" },
     isPlanner && { href: `${base}/plan`, label: "Plan", value: `${done ?? 0} of ${total ?? 0} tasks done` },
   ].filter(Boolean) as { href: string; label: string; value: string; over?: boolean }[];
 
