@@ -1,7 +1,6 @@
 -- Sixpence core schema (Milestone 0). See docs/architecture.md section 4.
 -- Planning, guest and money tables arrive in later migrations.
 
-create extension if not exists postgis with schema extensions;
 
 -- ---------- helpers ----------
 create or replace function public.touch_updated_at() returns trigger
@@ -40,7 +39,8 @@ create table public.wedding (
   date_flex text,                          -- e.g. 'fall 2027' when no date yet
   date_is_estimate boolean not null default false,
   location_text text,
-  geom extensions.geography(point, 4326),
+  lat double precision,                    -- wedding location (city or venue); distance math in SQL, no PostGIS needed
+  lng double precision,
   region_code text,
   guest_estimate integer check (guest_estimate is null or guest_estimate >= 0),
   guest_estimate_is_estimate boolean not null default false,

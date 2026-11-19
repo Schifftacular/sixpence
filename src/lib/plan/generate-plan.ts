@@ -25,10 +25,11 @@ export type PlanAnswers = z.infer<typeof PlanAnswers>;
 
 export const DEFAULT_GUESTS = 117; // The Knot 2026 average
 
-export type PlannedCategory = { key: CategoryKey; name: string; planned: number };
+export type PlannedCategory = { key: CategoryKey; name: string; planned: number; perGuest: boolean };
 export type PlannedTask = {
   key: string;
   title: string;
+  why: string | null;
   category: string;
   dueOffsetDays: number;
   dueDate: string; // ISO date
@@ -80,6 +81,7 @@ export function splitBudget(total: number, priorities: PlanAnswers["priorities"]
     key: c.key,
     name: c.name,
     planned: roundTo((total * weights[i]) / sum, 50),
+    perGuest: Boolean(c.perGuest),
   }));
   // Put any rounding difference in the cushion so categories add up to the total.
   const diff = roundTo(total, 1) - cats.reduce((a, c) => a + c.planned, 0);
@@ -100,6 +102,7 @@ export function generatePlan(input: PlanAnswers, today: string): Plan {
     return {
       key: t.key,
       title: t.title,
+      why: t.why ?? null,
       category: t.category,
       dueOffsetDays: t.offsetDays,
       dueDate: raw < today ? today : raw, // overdue templates become "do soon", not red

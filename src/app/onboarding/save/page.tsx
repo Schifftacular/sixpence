@@ -22,7 +22,7 @@ export default function SavePlanPage() {
     savePlan(answers).then((res) => {
       if (res.ok) {
         clearStartAnswers();
-        router.replace(`/w/${res.data.weddingId}`);
+        router.replace(`/w/${res.data.weddingId}/welcome`);
       } else setError(res.error);
     });
   }, [router]);

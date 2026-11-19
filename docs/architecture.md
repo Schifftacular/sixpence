@@ -1,6 +1,6 @@
 # Free Wedding Planner: Prototype Architecture
 
-*Version 1.9, November 19, 2026. Owner: architecture thread. Built with the engineering:system-design and engineering:architecture frameworks.*
+*Version 2.0, November 19, 2026. Owner: architecture thread. Built with the engineering:system-design and engineering:architecture frameworks.*
 *Inputs: [market study](../market-research/wedding-saas-market-study.md), [feature list](../market-research/feature-list.md). v1.1 folds in [user flows v1](../user-flows/couple-user-flows.md) section 11; v1.2 folds in [free data sources](../data-sources/free-data-sources.md). v1.4 folds in the reworked onboarding (user flows F1: document extraction, sample wedding, resume, notifications) and the [brand guide](../branding/brand-guide.md) (name **Sixpence**, tokens in `branding/tokens.json`).*
 
 ---
@@ -375,6 +375,11 @@ Mike's own wedding is the prototype's first and main dataset: user research and 
 
 **Decision.** Option A, with deterministic parsing for spreadsheets and Word files so the model only sees what needs it. *Amended v1.5:* during development the model runs as **Claude Code under Mike's subscription on his own computer** (engine A in section 5a), because subscription credentials can't be used inside the app; the in-app Claude API worker (engine B) is built later, when other couples need it, and Option B (local OCR + rules) becomes engine C, the no-AI fallback. **Consequences:** the free app gets a small per-couple cost and a dependency on one provider, isolated behind `src/lib/extract/` so it can be swapped. **Revisit** the model choice after measuring accuracy and cost on the synthetic twin's documents.
 
+### ADR-006: Plain lat/lng and a haversine query instead of PostGIS (v2.0)
+- **Decision:** `place`, `vendor` and `wedding` store `lat`/`lng` as doubles. `places_near()` filters by a bounding box, then sorts by haversine distance.
+- **Why:** at metro scale (a few thousand places per city) this is fast without a GiST index, works on any Postgres, and removes an extension from the setup Mike has to do. PostGIS can come back if a national index or polygon queries (service areas) need it.
+- **Trade-off:** no spatial index; the box filter keeps it cheap. Revisit past ~200k rows.
+
 ## 7a. Navigation and routes (v1.9)
 
 > **Revised Nov 19 for discovery** ([discovery-proposal.md](../user-flows/discovery-proposal.md), approved by Mike): six pillars with **Explore** second; Vendors renamed **Your vendors**; **Boards** added below the divider. Venues live inside Explore. Discovery rules: no paid ranking, no sponsored results, no lead forms; saving never contacts anyone; every vendor shows budget fit once a price is known.
@@ -402,6 +407,27 @@ From the approved navigation ([couple-user-flows.md](../user-flows/couple-user-f
 
 **Home** shows a strip of rows linking to Budget, Guests, Vendors and Plan, each with its status line, above the "This week" feed.
 
+## 7b. Prototype as built (v2.0)
+
+Migration `20261119020000_prototype.sql` adds everything below with RLS in the same file.
+
+| Area | Tables / functions | Notes |
+|---|---|---|
+| Discovery | `place`, `places_near(lat, lng, category, kind, radius_km, limit)` | Loaded by `scripts/etl/places.py` (pyarrow, Overture S3, anonymous). Order is distance only. Readable by anyone. |
+| Vendors | `vendor` (status idea → contacted → quoted → booked / passed), `quote` (flat or per guest), `vendor_contact`, `book_vendor()` | Booking accepts a quote, writes the payment schedule and the vendor's to-dos, and checks off the matching "book" task in one transaction. Saving never contacts anyone; contact buttons open the couple's own phone or email app. |
+| Money | `payment`, `contribution`, `mark_payment_paid()` | Committed = accepted quotes of booked vendors; per-guest quotes follow the current guest estimate. A partial payment splits off the rest. |
+| Guests | `household`, `guest`, `rsvp_household()`, `rsvp_submit()` | Quick add parses "Ana & Luis Pérez", "+1" and "(kids: …)". Public RSVP needs `APP_ENV=production` **and** `wedding.outbound_enabled`; both checks exist (app and database). |
+| Together | `invite`, `accept_invite()`, `invite_preview()` | Links are shown once and shared by the couple. 30-day expiry. Roles: plan with us, helping pay, just looking. |
+| The day | `timeline_event` | Draft generated from the ceremony time and booked vendors' arrival times (`src/lib/plan/day.ts`). |
+| Boards | `board_item` (photo, place, note) | Photos are hotlinked from Unsplash with credit, only when `UNSPLASH_ACCESS_KEY` is set. |
+
+Other v2.0 pieces:
+- **Location search:** Open-Meteo geocoding (free, no key, GeoNames CC BY 4.0) behind `src/lib/geo.ts`. Only the typed place name is sent.
+- **What things cost:** national figures split by category share (`src/lib/plan/benchmarks.ts`). No invented local multipliers; local adjustment is still the BEA RPP job.
+- **Welcome questions** after the first save (names, location, stage, priorities) feed Explore's "Picked for you" and mark already-done tasks.
+- **Developer sign-in:** email and password against the local auth server, only when `NEXT_PUBLIC_DEV_EMAIL_LOGIN=1` and not a production build. Production stays Google-only.
+- **Not yet built:** Wedding book uploads (needs Supabase Storage), document extraction UI, outbound email, payments beyond marking paid.
+
 ## 8. Repository layout
 
 ```
@@ -422,7 +448,7 @@ wedding-app/
 │  │  ├─ db/                  # Supabase clients, generated types
 │  │  └─ auth/                # role helpers
 │  └─ components/             # shadcn/ui + app components
-├─ supabase/migrations/       # SQL schema + RLS policies (PostGIS enabled)
+├─ supabase/migrations/       # SQL schema + RLS policies
 ├─ supabase/functions/        # Edge Functions: extraction worker, reminder sender
 ├─ workers/inbound-email/     # Cloudflare Email Worker (P1)
 ├─ etl/                       # DuckDB/SQL + scripts, run by .github/workflows/etl.yml
@@ -471,6 +497,7 @@ Order follows the user flows thread's section 12 (money first, because it is the
 10. **Domain.** Forward-to-email and branded email sending need the Sixpence domain (on Cloudflare for Email Routing).
 
 ## Changelog
+- 2026-11-19: v2.0, full prototype built on the sample wedding (section 7b). PostGIS dropped for lat/lng + haversine (ADR-006). Places ETL uses pyarrow. Location search via Open-Meteo geocoding.
 - 2026-11-19: v1.9, discovery (Mike approved): six pillars with Explore, Your vendors, Boards; new milestone E (Explore P0) right after 1b, pulling the places ETL forward from Milestone 7.
 - 2026-11-19: v1.8, Milestone 1 build notes: funder menu is This week, Budget, My contribution, Settings, Help (no Vendors); sign-in Google only in the build plan; API key only for engine B; `log_activity` RPC (activity rows from server actions, editors only); 7a marked under revision for discovery.
 - 2026-11-19: v1.7, approved navigation: section 7a route map, funder menu, shared shell with Still flexible line and + button, partner-activity dot via wedding_member.last_seen_activity_at; Money renamed Budget.

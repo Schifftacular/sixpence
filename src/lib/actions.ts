@@ -20,3 +20,23 @@ export async function canEdit(supabase: Awaited<ReturnType<typeof createClient>>
   const { data } = await supabase.rpc("can_edit", { w: weddingId });
   return data === true;
 }
+
+/** Signed in and allowed to edit this wedding, or an error message. */
+type Editor = { supabase: Awaited<ReturnType<typeof createClient>>; userId: string };
+export async function editor(weddingId: string): Promise<Editor | { error: string }> {
+  const { supabase, userId } = await actor();
+  if (!userId) return { error: "Please sign in." };
+  if (!(await canEdit(supabase, weddingId))) return { error: "You can view this wedding but not change it." };
+  return { supabase, userId };
+}
+
+export async function logActivity(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  weddingId: string,
+  action: string,
+  entityType: string,
+  entityId: string | null,
+  diff?: Record<string, unknown>,
+) {
+  await supabase.rpc("log_activity", { w: weddingId, p_action: action, p_entity_type: entityType, p_entity_id: entityId, p_diff: diff ?? null });
+}
