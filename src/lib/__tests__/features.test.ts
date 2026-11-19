@@ -83,3 +83,24 @@ describe("countdown", () => {
     expect(countdown("2026-12-01", TODAY)).toBe("12 days to go");
   });
 });
+
+import { distanceText, project, venueTypeOf } from "@/lib/explore/places";
+describe("explore places", () => {
+  it("formats distance in miles", () => {
+    expect(distanceText(0.5)).toBe("under a mile");
+    expect(distanceText(8)).toBe("5.0 mi");
+    expect(distanceText(40)).toBe("25 mi");
+  });
+  it("groups venue subtypes", () => {
+    expect(venueTypeOf("barn")).toBe("farm");
+    expect(venueTypeOf("winery")).toBe("wine");
+    expect(venueTypeOf(null)).toBeNull();
+  });
+  it("projects home to the center and keeps points in the box", () => {
+    const home = { lat: 35.6, lng: -82.55 };
+    const pts = [{ lat: 35.7, lng: -82.5 }, { lat: 35.5, lng: -82.7 }];
+    const { at } = project(pts, home, 300);
+    expect(at(home)).toEqual({ x: 150, y: 150 });
+    for (const p of pts.map(at)) { expect(p.x).toBeGreaterThanOrEqual(0); expect(p.x).toBeLessThanOrEqual(300); expect(p.y).toBeGreaterThanOrEqual(0); expect(p.y).toBeLessThanOrEqual(300); }
+  });
+});
