@@ -10,6 +10,7 @@ export function SignOut() {
       className="text-sm text-text-muted underline-offset-4 hover:underline"
       onClick={async () => {
         await createClient().auth.signOut();
+        router.replace("/");
         router.refresh();
       }}
     >

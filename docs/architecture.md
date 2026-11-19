@@ -1,6 +1,6 @@
 # Free Wedding Planner: Prototype Architecture
 
-*Version 1.6, November 19, 2026. Owner: architecture thread. Built with the engineering:system-design and engineering:architecture frameworks.*
+*Version 1.8, November 19, 2026. Owner: architecture thread. Built with the engineering:system-design and engineering:architecture frameworks.*
 *Inputs: [market study](../market-research/wedding-saas-market-study.md), [feature list](../market-research/feature-list.md). v1.1 folds in [user flows v1](../user-flows/couple-user-flows.md) section 11; v1.2 folds in [free data sources](../data-sources/free-data-sources.md). v1.4 folds in the reworked onboarding (user flows F1: document extraction, sample wedding, resume, notifications) and the [brand guide](../branding/brand-guide.md) (name **Sixpence**, tokens in `branding/tokens.json`).*
 
 ---
@@ -168,7 +168,7 @@ Postgres, all tables with `id uuid`, `created_at`, `updated_at`. Everything that
 **Sample wedding.** A fictional couple (not the synthetic twin, which mirrors Mike's real wedding's shape) seeded as a normal wedding with `wedding.is_sample = true`. An RLS policy lets anyone, signed in or not, read rows of sample weddings; no one can write them. The UI shows the "This is a sample wedding. Start yours." banner when `is_sample`.
 
 ### Money numbers (one shared function)
-The Money tab's four numbers are computed in one pure function, `src/lib/money.ts`, used by UI, emails and later the agent, never re-derived ad hoc:
+The Budget pillar's four numbers are computed in one pure function, `src/lib/money.ts`, used by UI, emails and later the agent, never re-derived ad hoc:
 - **Planned** = sum of `budget_category.target_amount`
 - **Committed** = sum of accepted `quote` totals (per-guest quotes × current guest count) + `budget_item.estimate` lines with no vendor
 - **Paid** = sum of `payment.amount` where `paid_at` is set
@@ -375,6 +375,31 @@ Mike's own wedding is the prototype's first and main dataset: user research and 
 
 **Decision.** Option A, with deterministic parsing for spreadsheets and Word files so the model only sees what needs it. *Amended v1.5:* during development the model runs as **Claude Code under Mike's subscription on his own computer** (engine A in section 5a), because subscription credentials can't be used inside the app; the in-app Claude API worker (engine B) is built later, when other couples need it, and Option B (local OCR + rules) becomes engine C, the no-AI fallback. **Consequences:** the free app gets a small per-couple cost and a dependency on one provider, isolated behind `src/lib/extract/` so it can be swapped. **Revisit** the model choice after measuring accuracy and cost on the synthetic twin's documents.
 
+## 7a. Navigation and routes (v1.7)
+
+> **Under revision (Nov 19).** Mike wants discovery (finding vendors, getting ideas) to be a main function, not only managing decisions already made. The user flows thread is reworking the pillars and menu. The Milestone 1 shell keeps every menu item in one function (`src/lib/nav.ts` `menuFor`), so the new menu is a small change there. Discovery leans on the data helpers in section 5 (places, map) and moves up the build plan once the new flows land.
+
+From the approved navigation ([couple-user-flows.md](../user-flows/couple-user-flows.md) section 5, [navigation-council.md](../user-flows/navigation-council.md)): no bottom tab bar; a menu button opens five pillars with live status lines; a left rail on desktop.
+
+| Menu item | Route | Status line comes from | Funder sees it? |
+|---|---|---|---|
+| This week (home) | `/w/[id]` | tasks due, payments due, new RSVPs (next 7 days) | Yes, money items only |
+| Budget | `/w/[id]/budget` | `money.ts` → "Still flexible $X" | Yes |
+| Guests | `/w/[id]/guests` | RSVP counts | **No** (no guest data, enforced by RLS too) |
+| Vendors | `/w/[id]/vendors` | booked / open categories | No (sees vendor names and payments inside Budget) |
+| Plan (incl. The Day) | `/w/[id]/plan`, `/w/[id]/plan/day` | next tasks; The Day becomes its own menu item in the last 3 months | No |
+| — divider — | | | |
+| Wedding book | `/w/[id]/book` | documents, items waiting for review | No |
+| Together | `/w/[id]/together` | partner, funders, roles, activity | Shown as **My contribution** (own entry only) |
+| Settings | `/w/[id]/settings` | notifications, export and delete | Yes (own notifications) |
+| Help & sample wedding | `/help`, `/sample` | | Yes |
+
+**Shared shell** (`src/app/(app)/w/[weddingId]/layout.tsx`): header with menu button, section name and the **"Still flexible $X"** line (links to Budget; never shows "due"); a **"+" add** button on every screen that opens one add sheet (vendor, quote, payment, guest, task, document); menu items built by one function `menuFor(role, weddingDate)` so funders get the short menu and The Day appears in the final 3 months.
+
+**Partner-activity dot.** `wedding_member.last_seen_activity_at` (timestamp). The dot shows when an `activity` row exists for this wedding with `actor_id` ≠ me, `actor_type = 'user'`, and `created_at > last_seen_activity_at`. Opening Together (or the activity list) updates it. Until Together exists (Milestone 2), Home shows "Since you last looked" and updates it. No counts, never for anything due.
+
+**Home** shows a strip of rows linking to Budget, Guests, Vendors and Plan, each with its status line, above the "This week" feed.
+
 ## 8. Repository layout
 
 ```
@@ -382,7 +407,7 @@ wedding-app/
 ├─ src/
 │  ├─ app/                    # Next.js routes
 │  │  ├─ (marketing)/         # landing page (branding thread)
-│  │  ├─ (app)/w/[weddingId]/ # dashboard, checklist, budget, guests, vendors, seating, day-of
+│  │  ├─ (app)/w/[weddingId]/ # shell + this week, budget, guests, vendors, plan (+ day), book, together, settings
 │  │  ├─ rsvp/[token]/        # public guest RSVP
 │  │  └─ api/cron/            # nightly jobs
 │  ├─ actions/                # typed server actions (the action layer)
@@ -415,10 +440,10 @@ Each milestone ends with something Mike can click on a live URL.
 | # | Milestone | Delivers | Feature-list steps |
 |---|---|---|---|
 | 0 | **Skeleton** | Repo, Next.js + Tailwind + shadcn, Supabase project (PostGIS on), deployed to Vercel, Sixpence tokens from `branding/tokens.json` mapped to Tailwind + logo/manifest from `branding/logo/web/`, synthetic twin + sample wedding seeds, product_event logging. Seed a small static cost table so onboarding works before the ETL exists | 1 |
-| 1 | **Onboarding + plan (F1, part 1)** | Landing + read-only sample wedding, 3-question start with no account, `generatePlan`, sign-in (Google, Apple, magic link), `onboarding_state` resume, setup checklist, notification preferences | 3, 4, 5 |
+| 1 | **Onboarding + plan (F1, part 1)** | Landing + read-only sample wedding, 3-question start with no account, `generatePlan`, sign-in (Google only), `onboarding_state` resume, setup checklist, notification preferences | 3, 4, 5 |
 | 1b | **Bring in your wedding book (F1, part 2)** | Uploads, camera scan, paste; spreadsheet import with column mapping; per-type schemas; local Agent SDK worker `worker:local` (engine A); matcher; review queue with confidence and source; "Here's where you stand" summary; extraction eval on synthetic twin docs. In-app Claude API worker (engine B) deferred | 9, 10, 26 |
 | 2 | **Sharing (F9)** | Invite partner, funder, helper; roles and RLS policies | 1, 2 |
-| 3 | **Money tab (F3)** | Budget categories with cost ranges, `money.ts` four numbers, contributions | 11 |
+| 3 | **Budget pillar (F3)** | Budget categories with cost ranges, `money.ts` four numbers, contributions | 11 |
 | 4 | **Vendors, quotes, payments (F5, F6)** | Vendor tracker with statuses, several quotes per vendor, accept → booked, payment schedule and due dates, document upload | 9, 10, 27 |
 | 5 | **Home "This week" (F2)** | Prioritised feed from tasks, payments due and RSVPs; reminder emails, welcome email and nudges (pg_cron + Resend), forward-to-email inbox (P1) | 6 |
 | 6 | **Guests + RSVP (F8, F4)** | Households, CSV import with Census batch geocode, per-household tokens and wedding RSVP link with name lookup, per-event RSVPs, guest-count vs budget trade-off | 7, 8 |
@@ -437,12 +462,14 @@ Order follows the user flows thread's section 12 (money first, because it is the
 4. **User flows.** Done in v1.2: milestones now follow the flows' build order.
 5. **Branding.** Done in v1.4: Sixpence tokens and logo files feed Milestone 0.
 6. **Region scope.** US-first is now baked in by the data (NOAA, BLS, BEA, Census, The Knot). International needs different cost and climate sources.
-7. **Accounts for data.** Free keys needed later: Geoapify, BLS, BEA, Foursquare OS (token), Census (optional). Cloudflare R2 for tiles. An Anthropic API key (server-only secret) for Milestone 1b.
+7. **Accounts for data.** Free keys needed later: Geoapify, BLS, BEA, Foursquare OS (token), Census (optional). Cloudflare R2 for tiles. An Anthropic API key (server-only secret) only when engine B (in-app Claude API worker) is built; Milestone 1b uses engine A with no key.
 8. **AI privacy.** Development: Mike turns off "Help improve Claude" in claude.ai privacy settings before running `worker:local` on real documents. Before engine B serves other couples: confirm Claude API retention terms and whether to request Zero Data Retention.
 9. **Sign-in.** Settled: Google only for now; no Apple.
 10. **Domain.** Forward-to-email and branded email sending need the Sixpence domain (on Cloudflare for Email Routing).
 
 ## Changelog
+- 2026-11-19: v1.8, Milestone 1 build notes: funder menu is This week, Budget, My contribution, Settings, Help (no Vendors); sign-in Google only in the build plan; API key only for engine B; `log_activity` RPC (activity rows from server actions, editors only); 7a marked under revision for discovery.
+- 2026-11-19: v1.7, approved navigation: section 7a route map, funder menu, shared shell with Still flexible line and + button, partner-activity dot via wedding_member.last_seen_activity_at; Money renamed Budget.
 - 2026-11-19: v1.6, engine A reworked per Mike: local Agent SDK worker on his computer, signed in with his subscription, pulling his wedding's queued jobs from the app (no interactive skill, no manual upload).
 - 2026-11-19: v1.5, Mike's answers: extraction cost approved; dev extraction runs in Claude Code under Mike's subscription on his computer (engine A) because subscription sign-in can't be used inside the app; engines B (Claude API) and C (local OCR) behind one interface; Google-only sign-in; repo Schifftacular/Sixpence.
 - 2026-11-19: v1.4, reworked onboarding: document extraction pipeline (section 5a, ADR-005), staging tables, job queue on Supabase pg_cron + Edge Functions (Vercel Hobby cron is daily only), sample wedding, onboarding state, notification prefs, first-party product events, Google/Apple/magic-link sign-in, forward-to-email (P1); Sixpence branding folded in; milestone 1 split into 1 and 1b.
