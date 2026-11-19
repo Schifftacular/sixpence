@@ -66,3 +66,38 @@ export async function addTask(input: unknown): Promise<ActionResult<{ taskId: st
   refresh();
   return ok({ taskId: data.id });
 }
+
+const UpdateTask = z.object({
+  taskId: z.uuid(),
+  title: z.string().trim().min(1).max(200).optional(),
+  dueDate: z.iso.date().nullable().optional(),
+  notes: z.string().max(4000).nullable().optional(),
+  assigneeMemberId: z.uuid().nullable().optional(),
+});
+
+/** Edit a task: rename, move the date, assign to one of you, add notes. */
+export async function updateTask(input: unknown): Promise<ActionResult> {
+  const parsed = UpdateTask.safeParse(input);
+  if (!parsed.success) return fail("Something was off with that task.");
+  const { taskId, ...d } = parsed.data;
+  const { supabase, userId } = await actor();
+  if (!userId) return fail("Please sign in.");
+  const { data: task } = await supabase.from("task").select("id,wedding_id").eq("id", taskId).maybeSingle<{ id: string; wedding_id: string }>();
+  if (!task || !(await canEdit(supabase, task.wedding_id))) return fail("You can't change this task.");
+  const patch: Record<string, unknown> = {};
+  if (d.title !== undefined) patch.title = d.title;
+  if (d.dueDate !== undefined) patch.due_date = d.dueDate;
+  if (d.notes !== undefined) patch.notes = d.notes;
+  if (d.assigneeMemberId !== undefined) {
+    if (d.assigneeMemberId) {
+      const { data: m } = await supabase.from("wedding_member").select("id").eq("id", d.assigneeMemberId).eq("wedding_id", task.wedding_id).maybeSingle();
+      if (!m) return fail("That person isn't part of this wedding.");
+    }
+    patch.assignee_member_id = d.assigneeMemberId;
+  }
+  const { error } = await supabase.from("task").update(patch).eq("id", taskId);
+  if (error) return fail("We couldn't save that. Please try again.");
+  await supabase.rpc("log_activity", { w: task.wedding_id, p_action: "task.updated", p_entity_type: "task", p_entity_id: taskId, p_diff: { fields: Object.keys(patch) } });
+  refresh();
+  return ok(null);
+}

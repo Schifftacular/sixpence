@@ -104,3 +104,19 @@ describe("explore places", () => {
     for (const p of pts.map(at)) { expect(p.x).toBeGreaterThanOrEqual(0); expect(p.x).toBeLessThanOrEqual(300); expect(p.y).toBeGreaterThanOrEqual(0); expect(p.y).toBeLessThanOrEqual(300); }
   });
 });
+
+import { draftDay, timeLabel } from "@/lib/plan/day";
+describe("day timeline", () => {
+  it("builds around the ceremony and uses vendor arrival times", () => {
+    const ev = draftDay("16:30", [{ id: "v1", name: "Night Owl", category_key: "music", arrival_time: null }, { id: "v2", name: "Lens Co", category_key: "photo", arrival_time: "13:00" }]);
+    expect(ev.find((e) => e.title === "Ceremony")?.startsAt).toBe("16:30");
+    expect(ev.find((e) => e.vendorId === "v1")?.startsAt).toBe("15:00");
+    expect(ev.find((e) => e.vendorId === "v2")?.startsAt).toBe("13:00");
+    expect(ev[0].startsAt <= ev[ev.length - 1].startsAt).toBe(true);
+  });
+  it("labels times in 12-hour form", () => {
+    expect(timeLabel("16:30")).toBe("4:30 pm");
+    expect(timeLabel("00:05")).toBe("12:05 am");
+    expect(timeLabel("12:00")).toBe("12:00 pm");
+  });
+});
