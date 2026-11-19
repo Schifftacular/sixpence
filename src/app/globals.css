@@ -36,3 +36,61 @@ body {
   outline: none;
   box-shadow: var(--focus-ring);
 }
+
+/* ---------- Sixpence UI kit (brand guide sections 6-8) ---------- */
+@layer components {
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    min-height: 44px; padding: 0 1.25rem; border-radius: var(--radius-pill);
+    font-weight: 500; font-size: 0.9375rem; line-height: 1; white-space: nowrap;
+    transition: background-color var(--dur-fast) var(--ease), opacity var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+    cursor: pointer;
+  }
+  .btn:disabled, .btn[aria-disabled="true"] { opacity: 0.55; cursor: default; }
+  .btn-primary { background: var(--primary); color: var(--on-primary); box-shadow: var(--shadow-float); }
+  .btn-primary:hover:not(:disabled) { opacity: 0.92; }
+  .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover:not(:disabled) { background: var(--primary-soft); }
+  .btn-quiet { color: var(--primary); padding: 0 0.5rem; min-height: 36px; }
+  .btn-quiet:hover:not(:disabled) { text-decoration: underline; text-underline-offset: 4px; }
+  .btn-danger { background: var(--surface); color: var(--danger); border: 1px solid var(--border); }
+  .btn-sm { min-height: 36px; padding: 0 0.875rem; font-size: 0.875rem; }
+  .btn-block { width: 100%; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); }
+  .card-pad { padding: 1rem 1.125rem; }
+  .card-link { display: block; transition: background-color var(--dur-fast) var(--ease); }
+  .card-link:hover { background: color-mix(in srgb, var(--primary-soft) 45%, var(--surface)); }
+  .divide-rows > * + * { border-top: 1px solid var(--border); }
+
+  .input {
+    width: 100%; min-height: 44px; padding: 0.5rem 0.875rem; border-radius: var(--radius-sm);
+    border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 1rem;
+  }
+  .input:focus { outline: none; box-shadow: var(--focus-ring); border-color: var(--primary); }
+  .label { display: block; font-size: 0.875rem; font-weight: 500; color: var(--text); margin-bottom: 0.375rem; }
+  .hint { font-size: 0.8125rem; color: var(--text-muted); }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 0.375rem; min-height: 28px; padding: 0 0.75rem;
+    border-radius: var(--radius-pill); font-size: 0.8125rem; font-weight: 500;
+    background: var(--primary-soft); color: var(--text); white-space: nowrap;
+  }
+  .chip-muted { background: color-mix(in srgb, var(--border) 60%, var(--surface)); color: var(--text-muted); }
+  .chip-success { background: var(--success-soft); color: var(--success); }
+  .chip-brass { background: color-mix(in srgb, var(--accent) 18%, var(--surface)); color: var(--accent-text); }
+  .chip-toggle { border: 1px solid var(--border); background: var(--surface); min-height: 36px; cursor: pointer; }
+  .chip-toggle[aria-pressed="true"] { background: var(--primary-soft); border-color: var(--primary); }
+
+  .money { font-variant-numeric: tabular-nums; }
+  .eyebrow { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
+  .h-page { font-family: var(--font-display); font-weight: 600; font-size: 2rem; line-height: 1.15; color: var(--text); }
+  .h-section { font-weight: 600; font-size: 1.0625rem; color: var(--text); }
+  .num-hero { font-family: var(--font-display); font-weight: 600; font-size: 2.5rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+
+  .bar-track { position: relative; height: 10px; border-radius: 999px; background: color-mix(in srgb, var(--border) 70%, var(--surface)); overflow: hidden; }
+  .bar-band { position: absolute; top: 0; bottom: 0; background: color-mix(in srgb, var(--primary) 14%, transparent); }
+  .bar-fill { position: absolute; top: 2px; bottom: 2px; left: 2px; border-radius: 999px; background: var(--primary); }
+  .bar-fill-over { background: var(--over-plan); }
+  .bar-fill-paid { background: var(--success); }
+}
