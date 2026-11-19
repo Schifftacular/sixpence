@@ -120,3 +120,28 @@ describe("day timeline", () => {
     expect(timeLabel("12:00")).toBe("12:00 pm");
   });
 });
+
+import { guestsCsv, parseHousehold, parseList, rsvpCounts } from "@/lib/guests/parse";
+describe("guest quick add", () => {
+  it("shares a last name across a couple", () => {
+    const h = parseHousehold("Ana & Luis Pérez")!;
+    expect(h.guests.map((g) => `${g.firstName} ${g.lastName}`)).toEqual(["Ana Pérez", "Luis Pérez"]);
+  });
+  it("handles plus-ones and kids", () => {
+    const a = parseHousehold("Maya Chen +1")!;
+    expect(a.plusOneAllowed).toBe(true);
+    expect(a.guests).toHaveLength(2);
+    const b = parseHousehold("Tom and Priya Shah (kids: Leo, Mia)")!;
+    expect(b.guests.filter((g) => g.isChild).map((g) => g.firstName)).toEqual(["Leo", "Mia"]);
+    expect(b.name).toBe("Tom and Priya Shah");
+  });
+  it("parses a pasted list and skips blanks", () => {
+    expect(parseList("Grandma Rose\n\n- Sam Lee\n")).toHaveLength(2);
+  });
+  it("counts RSVPs and escapes CSV", () => {
+    const c = rsvpCounts([{ responded_at: "x", guests: [{ attending: true, is_child: false }, { attending: null, is_child: true }] }]);
+    expect(c).toMatchObject({ guests: 2, yes: 1, waiting: 1, kids: 1, responded: 1 });
+    const csv = guestsCsv([{ name: "Lee, Sam", side: null, group_name: null, email: null, address: null, guests: [{ first_name: "Sam", last_name: "Lee", is_child: false, attending: true, meal: null, dietary: null }] }]);
+    expect(csv.split("\n")[1].startsWith('"Lee, Sam",Sam,Lee')).toBe(true);
+  });
+});
